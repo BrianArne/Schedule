@@ -95,7 +95,10 @@ def decrement_task_times():
     global C_TIME
     global SAVED_TIME
     
-    gpu_flag = True
+    if(len(gpu_queue) != 0 and len(cpu_queue) != 0):
+        saved = True
+    else:
+        saved = False
 
     if(len(gpu_queue) != 0):
         if (gpu_queue[0]._size <= 2):
@@ -106,13 +109,11 @@ def decrement_task_times():
                 G_TIME += 2
         else:
             gpu_queue[0]._size = gpu_queue[0]._size - 2
-    if(len(gpu_queue) == 0):
-        gpu_flag = False
 
     if(len(cpu_queue) != 0):
         if(cpu_queue[0]._size == 0):
             cpu_queue.pop(0)
-            if(gpu_flag):
+            if(saved):
                 SAVED_TIME += 1
             else:
                 C_TIME += 1
@@ -126,7 +127,7 @@ Creates 100 random Jobs
 '''
 def generate_queue():
     queue = []
-    for i in range(0,100):
+    for i in range(0,100000):
         job_size = randint(1,5)
         global CURR_ID
         new_task = Task(CURR_ID, job_size)
@@ -202,13 +203,3 @@ while len(task_queue) > 0:
 print("G_TIME: ", G_TIME)
 print("C_TIME: ", C_TIME)
 print("SAVED_TIME: ", SAVED_TIME)
-
-'''Comments
-New schedule algorithm for OS managing Accelerator devices
-
-Need checker for payload > or < allotted
-Track time something gets in OS or GPU
-Track time it would have gotten done
-Track time it got done
-Jobs processed
-'''
