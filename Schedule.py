@@ -5,18 +5,30 @@ from random import randint
 #MACROS
 GPU_QUANTUM = 2
 CURR_ID = 0
-TIME = 0
+G_TIME = 0
+C_TIME = 0
+SAVED_TIME = 0
 
 
 '''
 Enum representing job data sizes being passed to GPU or CPU processing
 '''
 class JobSize(Enum):
+    HALF_SMALL = 0
     SMALL = 1 
     MEDIUM =2 
     LARGE = 3
     XLARGE = 4
     XXLarge = 5
+    
+    '''
+    Overwritting subtraction method to subtract int from value
+    '''
+    def __sub__(self, y):
+        self.value = self.value - 1
+    # End __sub__();
+
+# End JobSize Enum
 
 '''
 Container Class represent a task. Holds ID and JobSize
@@ -34,6 +46,7 @@ class Task:
         return "Job Size: " + self._size.name \
             + " Num Id: " + str(self._num_id) \
             + " Allocation: " + str(self._allocated)
+# End Task Class
 
 '''
 Takes in a job and puts it in GPU or OS Queue
@@ -52,6 +65,57 @@ Used to for compring algorithm with and without CPU
 def assign_one_queue(task):
     gpu_queue.append(task)
 # End assign_one_queue();
+
+'''
+Returns bool. Checks if cpu can take another task
+'''
+def check_cpu_open():
+    global cpu_queue
+    if len(cpu_queue) == 0:
+        return True
+# End check_cpu_open();
+
+'''
+Returns bool. Checks if gpu can take another task
+'''
+def check_gpu_open():
+    global gpu_queue
+    if len(gpu_queue) == 0:
+        return True
+# End check_gpu_open();
+
+'''
+Looks at each process and "processes them"
+Adds quantum time to overall time
+'''
+def decrement_task_times():
+    global gpu_queue
+    global cpu_queue
+    
+    gpu_flag = True
+    if(len(gpu_queue) != 0):
+        if (gpu_queue[0]._size.value <= 2):
+            task = gpu_queue.pop(0)
+            if(task._size.value == 1):
+                G_TIME + 1
+            else: 
+                G_TIME + 2
+        else:
+            gpu_queue[0]._size.value = gpu_queue[0]._size.value - 2
+    else:
+        gpu_flag = False
+
+    if(len(cpu_queue) != 0):
+        if(cpu_queue[0]._size.value == 0):
+            cpu_queue.pop(0)
+            if(gpu_flag):
+                SAVED_TIME + 1
+            else:
+                C_TIME + 1
+        else:
+            cpu_queue[0]._size.value = cpu_queue[0]._size.value - 1
+    return
+# End decrement_task_times();
 
 '''
 Creates 100 random Jobs
@@ -73,17 +137,27 @@ While also implementing a GERM scheduling policy
 '''
 def GERM_process_task_variant(task_queue):
     task = task_queue.pop(0)
+
     if task._size == JobSize.SMALL:
-        global cpu_queue
-        cpu_queue.append(task)
+        if (check_cpu_open()):
+            global cpu_queue
+            cpu_queue.append(task)
+        elif (check_gpu_open()):
+            global gpu_queue
+            gpu_queue.append(task)
+        else:
+            task_queue.insert(0, task)
         return
+
     if task._size.value > task._allocated:
         task._allocated += 2
         task_queue.append(task)
         return
     else:
-        global gpu_queue
-        gpu_queue.append(task)
+        if(check_gpu_open()):
+            gpu_queue.append(task)
+        else:
+            task_queue.insert(0,task)
     return
 # End process_task();
 
@@ -106,18 +180,31 @@ def print_queues():
 ################
 
 random.seed(1)
-
-task_queue = generate_queue()
-print(len(task_queue))
 cpu_queue = []
 gpu_queue = []
 
+task_queue = generate_queue()
+'''
+for task in task_queue:
+    assign_two_queue(task)
+'''
+
+print(len(task_queue))
+
+# This will be main method
 while len(task_queue) > 0:
     print(len(task_queue))
     GERM_process_task_variant(task_queue)
+    print_queues()
+    decrement_task_times()
+    print_queues()
+
+
 print_queues()
-print(len(cpu_queue))
-print(len(gpu_queue))
+print("G_TIME: ", G_TIME)
+print("C_TIME: ", C_TIME)
+print("SAVED_TIME: ", SAVED_TIME)
+
 '''Comments
 New schedule algorithm for OS managing Accelerator devices
 
