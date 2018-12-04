@@ -43,7 +43,7 @@ class Task:
         self._allocated = 2
 
     def __str__(self):
-        return "Job Size: " + self._size.name \
+        return "Job Size: " + str(self._size) \
             + " Num Id: " + str(self._num_id) \
             + " Allocation: " + str(self._allocated)
 # End Task Class
@@ -91,29 +91,33 @@ Adds quantum time to overall time
 def decrement_task_times():
     global gpu_queue
     global cpu_queue
+    global G_TIME
+    global C_TIME
+    global SAVED_TIME
     
     gpu_flag = True
+
     if(len(gpu_queue) != 0):
-        if (gpu_queue[0]._size.value <= 2):
+        if (gpu_queue[0]._size <= 2):
             task = gpu_queue.pop(0)
-            if(task._size.value == 1):
-                G_TIME + 1
+            if(task._size == 1):
+                G_TIME += 1
             else: 
-                G_TIME + 2
+                G_TIME += 2
         else:
-            gpu_queue[0]._size.value = gpu_queue[0]._size.value - 2
-    else:
+            gpu_queue[0]._size = gpu_queue[0]._size - 2
+    if(len(gpu_queue) == 0):
         gpu_flag = False
 
     if(len(cpu_queue) != 0):
-        if(cpu_queue[0]._size.value == 0):
+        if(cpu_queue[0]._size == 0):
             cpu_queue.pop(0)
             if(gpu_flag):
-                SAVED_TIME + 1
+                SAVED_TIME += 1
             else:
-                C_TIME + 1
+                C_TIME += 1
         else:
-            cpu_queue[0]._size.value = cpu_queue[0]._size.value - 1
+            cpu_queue[0]._size = cpu_queue[0]._size - 1
     return
 # End decrement_task_times();
 
@@ -125,7 +129,7 @@ def generate_queue():
     for i in range(0,100):
         job_size = randint(1,5)
         global CURR_ID
-        new_task = Task(CURR_ID, JobSize(job_size))
+        new_task = Task(CURR_ID, job_size)
         queue.append(new_task)
         CURR_ID += 1
     return queue
@@ -137,8 +141,8 @@ While also implementing a GERM scheduling policy
 '''
 def GERM_process_task_variant(task_queue):
     task = task_queue.pop(0)
-
-    if task._size == JobSize.SMALL:
+    
+    if (task._size == 1):
         if (check_cpu_open()):
             global cpu_queue
             cpu_queue.append(task)
@@ -149,7 +153,7 @@ def GERM_process_task_variant(task_queue):
             task_queue.insert(0, task)
         return
 
-    if task._size.value > task._allocated:
+    if task._size > task._allocated:
         task._allocated += 2
         task_queue.append(task)
         return
@@ -189,18 +193,12 @@ for task in task_queue:
     assign_two_queue(task)
 '''
 
-print(len(task_queue))
 
 # This will be main method
 while len(task_queue) > 0:
-    print(len(task_queue))
     GERM_process_task_variant(task_queue)
-    print_queues()
     decrement_task_times()
-    print_queues()
 
-
-print_queues()
 print("G_TIME: ", G_TIME)
 print("C_TIME: ", C_TIME)
 print("SAVED_TIME: ", SAVED_TIME)
