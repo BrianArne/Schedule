@@ -9,6 +9,7 @@
 
 from enum import Enum
 from random import randint
+import random
 
 #MACROS
 batch_size = 2
@@ -37,11 +38,16 @@ class Task:
         self._num_id = num_id
         self._allocated = 2
 
+    def __str__(self):
+        return "Job Size: " + self._size.name \
+            + " Num Id: " + str(self._num_id) \
+            + " Allocation: " + str(self._allocated)
+
 '''
 Takes in a job and puts it in GPU or OS Queue
 '''
 def assign_queue(task):
-    if(task._size is 1):
+    if(task._size is JobSize.SMALL):
         cpu_queue.append(task)
     else:
         gpu_queue.append(task)
@@ -54,7 +60,7 @@ def generate_queue():
     for i in range(0,100):
         job_size = randint(1,4)
         global curr_id
-        new_task = Task(JobSize(job_size), curr_id)
+        new_task = Task(curr_id, JobSize(job_size))
         queue.append(new_task)
         curr_id += 1
     return queue
@@ -64,23 +70,29 @@ Print both queues to the console
 '''
 def print_queues():
     print("*****GPU Queue*****")
-    print(gpu_queue)
+    global gpu_queue
+    for task in gpu_queue:
+        print(str(task))
     print("*****CPU Queue*****")
-    print(cpu_queue)
+    global cpu_queue
+    for task in cpu_queue:
+        print(str(task))
 
 
 ################
 ####  Main  ####
 ################
 
-batch_size = 2
-cpu_time_multiplier = 2
-curr_id = 1
+random.seed(1)
 
 task_queue = generate_queue()
 cpu_queue = []
 gpu_queue = []
 
+
 for job in task_queue:
     assign_queue(job)
+print("*****Total Tasks*****")
+for task in task_queue:
+    print(str(task))
 print_queues()
