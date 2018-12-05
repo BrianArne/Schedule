@@ -1,17 +1,32 @@
 import random
 from enum import Enum
 from random import randint
-
-#MACROS
-GPU_QUANTUM = 2
+'''
+MACROS
+'''
+#Used to generate task IDs
 CURR_ID = 0
+
+# Total GPU quantums
 G_TIME = 0
+# Total CPU quantums
 C_TIME = 0
+# Total time when GPU and CPU were running calculations
 SAVED_TIME = 0
+# Size that a process can be <= to be passed to CPU
+SMALL_ENOUGH = 1
+# Test Size
+TEST_SIZE = 200000
+# CPU and GPU queues
+cpu_queue = []
+gpu_queue = []
 
-
+###################
+###    ENUMS    ###
+###################
 '''
 Enum representing job data sizes being passed to GPU or CPU processing
+Currently not really being used, but ._size could be replaced with enums
 '''
 class JobSize(Enum):
     HALF_SMALL = 0
@@ -27,8 +42,11 @@ class JobSize(Enum):
     def __sub__(self, y):
         self.value = self.value - 1
     # End __sub__();
-
 # End JobSize Enum
+
+###################
+###    CLASS    ###
+###################
 
 '''
 Container Class represent a task. Holds ID and JobSize
@@ -41,12 +59,18 @@ class Task:
         self._size = job_size
         self._num_id = num_id
         self._allocated = 2
+    # End __init__();
 
     def __str__(self):
         return "Job Size: " + str(self._size) \
             + " Num Id: " + str(self._num_id) \
             + " Allocation: " + str(self._allocated)
+    # End __str__();
 # End Task Class
+
+###################
+###   METHODS   ###
+###################
 
 '''
 Takes in a job and puts it in GPU or OS Queue
@@ -95,11 +119,13 @@ def decrement_task_times():
     global C_TIME
     global SAVED_TIME
     
+    # Checks if we are double computing
     if(len(gpu_queue) != 0 and len(cpu_queue) != 0):
         saved = True
     else:
         saved = False
 
+    # Processes one round of GPU
     if(len(gpu_queue) != 0):
         if (gpu_queue[0]._size <= 2):
             task = gpu_queue.pop(0)
@@ -108,8 +134,10 @@ def decrement_task_times():
             else: 
                 G_TIME += 2
         else:
-            gpu_queue[0]._size = gpu_queue[0]._size - 2
+            gpu_queue[0]._size -= 2#gpu_queue[0]._size - 2
+            G_TIME +=2
 
+    # Processes one round of CPU
     if(len(cpu_queue) != 0):
         if(cpu_queue[0]._size == 0):
             cpu_queue.pop(0)
@@ -118,7 +146,8 @@ def decrement_task_times():
             else:
                 C_TIME += 1
         else:
-            cpu_queue[0]._size = cpu_queue[0]._size - 1
+            cpu_queue[0]._size -= 1#cpu_queue[0]._size - 1
+            C_TIME += 1
     return
 # End decrement_task_times();
 
@@ -127,7 +156,7 @@ Creates 100 random Jobs
 '''
 def generate_queue():
     queue = []
-    for i in range(0,100000):
+    for i in range(0,TEST_SIZE):
         job_size = randint(1,5)
         global CURR_ID
         new_task = Task(CURR_ID, job_size)
@@ -141,29 +170,29 @@ Looks at next task and assigns processor depending on JobSize and Allocated Time
 While also implementing a GERM scheduling policy
 '''
 def GERM_process_task_variant(task_queue):
-    task = task_queue.pop(0)
-    
-    if (task._size == 1):
+
+    #if (task_queue[0]._size <= 1):
+    global SMALL_ENOUGH
+    if (task_queue[0]._size <= SMALL_ENOUGH):
         if (check_cpu_open()):
             global cpu_queue
-            cpu_queue.append(task)
+            cpu_queue.append(task_queue.pop(0))
         elif (check_gpu_open()):
             global gpu_queue
-            gpu_queue.append(task)
+            gpu_queue.append(task_queue.pop(0))
+            '''
         else:
-            task_queue.insert(0, task)
-        return
+            #task_queue.insert(0, task)'''
 
-    if task._size > task._allocated:
-        task._allocated += 2
+    if (task_queue[0]._size > task_queue[0]._allocated):
+        task_queue[0]._allocated += 2
+        task = task_queue.pop(0)
         task_queue.append(task)
         return
     else:
         if(check_gpu_open()):
-            gpu_queue.append(task)
-        else:
-            task_queue.insert(0,task)
-    return
+            gpu_queue.append(task_queue.pop(0))
+        return
 # End process_task();
 
 '''
@@ -180,26 +209,34 @@ def print_queues():
         print(str(task))
 # End print_queues();
 
-################
-####  Main  ####
-################
 
-random.seed(1)
-cpu_queue = []
-gpu_queue = []
+###################
+###    MAIN    ####
+###################
 
-task_queue = generate_queue()
 '''
-for task in task_queue:
-    assign_two_queue(task)
+Main. Run a Process
 '''
+def main():
+    #random.seed(1)
+
+    #Our Two Processing Avenues
+    cpu_queue = []
+    gpu_queue = []
+
+    task_queue = generate_queue()
 
 
-# This will be main method
-while len(task_queue) > 0:
-    GERM_process_task_variant(task_queue)
-    decrement_task_times()
+    # This will be main method
+    # while len(task_queue) > 0:
+    while len(task_queue) != 0:
+        GERM_process_task_variant(task_queue)
+        decrement_task_times()
 
-print("G_TIME: ", G_TIME)
-print("C_TIME: ", C_TIME)
-print("SAVED_TIME: ", SAVED_TIME)
+    print("Gpu processing time: ", G_TIME)
+    print("Cpu processing time: ", C_TIME)
+    print("Saved time: ", SAVED_TIME)
+    print("Total CPU Jobs: ", (C_TIME + SAVED_TIME) / 2)
+
+# Run main
+main()
