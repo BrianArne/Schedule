@@ -1,5 +1,5 @@
 import random
-from enum import Enum
+from enum import Enum 
 from random import randint
 
 '''
@@ -14,7 +14,7 @@ G_TIME = 0
 # Total time when GPU and CPU were running calculations
 SAVED_TIME = 0
 # Size that a process can be <= to be passed to CPU
-SMALL_ENOUGH = 3
+SMALL_ENOUGH = 1
 # Test Size
 TEST_SIZE = 200000
 
@@ -114,11 +114,13 @@ Looks at each process and "processes them"
 Adds quantum time to overall time
 '''
 def decrement_task_times():
-    global gpu_queue
+    global gpu_queue; global cpu_queue; global G_TIME; global C_TIME; global SAVED_TIME;
+    '''
     global cpu_queue
     global G_TIME
     global C_TIME
     global SAVED_TIME
+    '''
     
     # Checks if we are double computing
     if(len(gpu_queue) != 0 and len(cpu_queue) != 0):
@@ -171,8 +173,6 @@ Looks at next task and assigns processor depending on JobSize and Allocated Time
 While also implementing a GERM scheduling policy
 '''
 def GERM_process_task_variant(task_queue):
-
-    #if (task_queue[0]._size <= 1):
     global SMALL_ENOUGH
     if (task_queue[0]._size <= SMALL_ENOUGH):
         if (check_cpu_open()):
@@ -181,9 +181,6 @@ def GERM_process_task_variant(task_queue):
         elif (check_gpu_open()):
             global gpu_queue
             gpu_queue.append(task_queue.pop(0))
-            '''
-        else:
-            #task_queue.insert(0, task)'''
 
     if (task_queue[0]._size > task_queue[0]._allocated):
         task_queue[0]._allocated += 2
@@ -192,7 +189,7 @@ def GERM_process_task_variant(task_queue):
         return
     else:
         if(check_gpu_open()):
-            gpu_queue.append(task_queue.pop(0))
+             gpu_queue.append(task_queue.pop(0))
         return
 # End process_task();
 
@@ -219,7 +216,7 @@ def print_queues():
 Main. Run a Process
 '''
 def main():
-    random.seed(1000)
+    random.seed(1)
 
     #Our Two Processing Avenues
     cpu_queue = []
