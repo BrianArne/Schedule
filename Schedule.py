@@ -1,22 +1,23 @@
 import random
 from enum import Enum
 from random import randint
+
 '''
 MACROS
 '''
-#Used to generate task IDs
-CURR_ID = 0
-
-# Total GPU quantums
-G_TIME = 0
 # Total CPU quantums
 C_TIME = 0
+#Used to generate task IDs
+CURR_ID = 0
+# Total GPU quantums
+G_TIME = 0
 # Total time when GPU and CPU were running calculations
 SAVED_TIME = 0
 # Size that a process can be <= to be passed to CPU
-SMALL_ENOUGH = 1
+SMALL_ENOUGH = 3
 # Test Size
 TEST_SIZE = 200000
+
 # CPU and GPU queues
 cpu_queue = []
 gpu_queue = []
@@ -218,7 +219,7 @@ def print_queues():
 Main. Run a Process
 '''
 def main():
-    #random.seed(1)
+    random.seed(1000)
 
     #Our Two Processing Avenues
     cpu_queue = []
