@@ -115,19 +115,10 @@ Adds quantum time to overall time
 '''
 def decrement_task_times():
     global gpu_queue; global cpu_queue; global G_TIME; global C_TIME; global SAVED_TIME;
-    '''
-    global cpu_queue
-    global G_TIME
-    global C_TIME
-    global SAVED_TIME
-    '''
-    
-    # Checks if we are double computing
     if(len(gpu_queue) != 0 and len(cpu_queue) != 0):
         saved = True
     else:
         saved = False
-
     # Processes one round of GPU
     if(len(gpu_queue) != 0):
         if (gpu_queue[0]._size <= 2):
@@ -139,7 +130,6 @@ def decrement_task_times():
         else:
             gpu_queue[0]._size -= 2#gpu_queue[0]._size - 2
             G_TIME +=2
-
     # Processes one round of CPU
     if(len(cpu_queue) != 0):
         if(cpu_queue[0]._size == 0):
